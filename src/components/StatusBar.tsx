@@ -18,8 +18,6 @@ export function StatusBar({ lair, error }: Props) {
       <span className={styles.item}>Walls: <strong>{walls.length}</strong></span>
       <span className={styles.sep}>·</span>
       <span className={styles.item}>Features: <strong>{features.length}/{totalFeatures}</strong></span>
-      <span className={styles.sep}>·</span>
-      <span className={styles.valid}>✅ Valid Lair</span>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Controls } from './components/Controls';
 import { LairGrid } from './components/LairGrid';
 import { StatusBar } from './components/StatusBar';
 import { Legend } from './components/Legend';
+import { Footer } from './components/Footer';
 import styles from './App.module.css';
 
 export default function App() {
@@ -71,6 +72,7 @@ export default function App() {
         {lair && <LairGrid lair={lair} />}
         <Legend />
       </main>
+      <Footer />
     </div>
   );
 }

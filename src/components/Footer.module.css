@@ -1,0 +1,39 @@
+.footer {
+  width: 100%;
+  border-top: 1px solid #e5e7eb;
+  padding: 1.25rem 1.5rem;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.disclaimer {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.disclaimer a {
+  color: #6b7280;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.disclaimer a:hover {
+  color: #111827;
+}
+
+.credit {
+  font-size: 0.7rem;
+  color: #d1d5db;
+}
+
+@media print {
+  .footer {
+    display: none;
+  }
+}

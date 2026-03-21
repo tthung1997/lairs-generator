@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# 🏰 Lairs — Random Lair Generator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web tool that instantly generates random, rule-compliant lairs for the [Lairs](https://www.ktbg.fun/lairs) board game. Skip the setup and start exploring!
 
-Currently, two official plugins are available:
+🔗 **Live app: https://tthung1997.github.io/lairs-generator/**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What it does
 
-## React Compiler
+Setting up a lair in Lairs requires each player to place walls, monsters, traps, chests, a start tile, and an exit tile on a grid — all while following three strict legality rules. This generator does that instantly, so players can go straight to the fun part.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Features
+- 🎲 **One-click generation** — get a new valid lair instantly
+- 📐 **Two grid sizes** — 6×6 (Base game) and 8×6 (Big lair variant)
+- 🧱 **Adjustable wall count** — slider within the allowed range per variant
+- 🔗 **Shareable URLs** — every lair is encoded in the URL, share it with your opponent
+- 🖨️ **Print-friendly** — clean black & white output for physical reference during setup
 
-## Expanding the ESLint configuration
+### Legality rules enforced
+1. **No unreachable spaces** — every cell is reachable from Start
+2. **Use (almost) everything** — all features placed, walls within allowed range
+3. **The Peril Rule** — every Goal (Exit + Chests) has at least one path from Start passing through at most one Monster and one Trap
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **React 18 + TypeScript** — UI and type safety
+- **Vite** — build tool
+- **CSS Modules** — scoped styles
+- **GitHub Pages** — hosting (auto-deploy via GitHub Actions)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Local development
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open http://localhost:5173/lairs-generator/
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Docs
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+See the [`docs/`](docs/) folder for the full [PRD](docs/PRD.md), [TDD](docs/TDD.md), and [implementation plan](docs/plan.md).

@@ -6,7 +6,7 @@ export function Footer() {
     <footer className={styles.footer}>
       <p className={styles.disclaimer}>
         This is an unofficial fan-made tool and is not affiliated with or endorsed by{' '}
-        <a href="https://www.ktbg.fun/lairs" target="_blank" rel="noopener noreferrer">KTBG</a>{' '}
+        <a href="https://www.kidstablebg.com/games/lairs" target="_blank" rel="noopener noreferrer">KTBG</a>{' '}
         or the creators of{' '}
         <a href="https://boardgamegeek.com/boardgame/404883/lairs" target="_blank" rel="noopener noreferrer">
           Lairs

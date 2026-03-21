@@ -4,7 +4,7 @@ A web tool that instantly generates random, rule-compliant lairs for the [Lairs]
 
 🔗 **Live app: https://tthung1997.github.io/lairs-generator/**
 
-> *This is an unofficial fan-made tool and is not affiliated with or endorsed by [KTBG](https://www.ktbg.fun/lairs) or the creators of [Lairs](https://boardgamegeek.com/boardgame/404883/lairs). Lairs is a trademark of its respective owners.*
+> *This is an unofficial fan-made tool and is not affiliated with or endorsed by [KTBG](https://www.kidstablebg.com/games/lairs) or the creators of [Lairs](https://boardgamegeek.com/boardgame/404883/lairs). Lairs is a trademark of its respective owners.*
 
 ## What it does
 

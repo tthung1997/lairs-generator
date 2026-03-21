@@ -447,7 +447,11 @@ lairs/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml
-└── LRS_rules_basegame_web.pdf
+└── docs/
+    ├── plan.md
+    ├── PRD.md
+    ├── TDD.md
+    └── LRS_rules_basegame_web.pdf
 ```
 
 ---

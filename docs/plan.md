@@ -145,7 +145,11 @@ lairs/
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml              # GitHub Pages CI/CD
-└── LRS_rules_basegame_web.pdf      # Existing file
+└── docs/
+    ├── plan.md
+    ├── PRD.md
+    ├── TDD.md
+    └── LRS_rules_basegame_web.pdf  # Game rulebook
 ```
 
 ---

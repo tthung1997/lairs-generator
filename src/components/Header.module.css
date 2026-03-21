@@ -1,0 +1,20 @@
+.header {
+  text-align: center;
+  padding: 1.5rem 1rem 0.5rem;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0.25rem 0 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}

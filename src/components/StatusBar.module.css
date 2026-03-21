@@ -1,0 +1,30 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+  padding: 0.5rem 0;
+}
+
+.item strong {
+  color: #111827;
+}
+
+.sep {
+  color: #d1d5db;
+}
+
+.valid {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 0.9rem;
+}

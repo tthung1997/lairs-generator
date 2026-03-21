@@ -1,0 +1,83 @@
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1.25rem;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.range {
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+.toggle {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+}
+
+.toggleBtn {
+  padding: 0.4rem 1rem;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toggleBtn:hover:not(.active) {
+  background: #f3f4f6;
+}
+
+.toggleBtn.active {
+  background: #111827;
+  color: #fff;
+}
+
+.slider {
+  width: 160px;
+  accent-color: #111827;
+  cursor: pointer;
+}
+
+.generateBtn {
+  padding: 0.6rem 1.5rem;
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.generateBtn:hover {
+  background: #1f2937;
+}
+
+.generateBtn:active {
+  transform: scale(0.97);
+}

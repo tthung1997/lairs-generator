@@ -67,7 +67,12 @@ export default function App() {
         const expState = decodeExplorationState(hash);
         if (expState) {
           setExplorationMode(expState.explorationMode);
-          setRevealedCells(expState.revealedCells);
+          // Fresh explore link: no revealed cells yet — auto-reveal start cell
+          if (expState.revealedCells.size === 0 && decoded) {
+            setRevealedCells(new Set([getStartCellKey(decoded)]));
+          } else {
+            setRevealedCells(expState.revealedCells);
+          }
         }
         /* eslint-enable react-hooks/set-state-in-effect */
         return;

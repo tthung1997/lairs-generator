@@ -29,19 +29,27 @@ export function Controls({
   lairHash,
 }: Props) {
   const range = WALL_RANGES[gridSize];
-  const [copied, setCopied] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [copiedType, setCopiedType] = useState<'full' | 'explore' | null>(null);
 
-  const handleCopyLink = () => {
+  const handleCopy = (type: 'full' | 'explore') => {
     if (!lairHash) return;
-    const url = `${window.location.origin}${window.location.pathname}#${lairHash}`;
+    const hash = type === 'explore' ? `${lairHash}:e:` : lairHash;
+    const url = `${window.location.origin}${window.location.pathname}#${hash}`;
+    setShowDropdown(false);
     navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setCopiedType(type);
+      setTimeout(() => setCopiedType(null), 2000);
     }).catch(() => {
-      // Fallback: select the URL in the address bar as a hint
       window.prompt('Copy this link:', url);
     });
   };
+
+  const shareLabel = copiedType === 'full'
+    ? '✓ Full View Copied!'
+    : copiedType === 'explore'
+      ? '✓ Explore Copied!'
+      : '📋 Share';
 
   return (
     <div className={styles.controls}>
@@ -80,7 +88,7 @@ export function Controls({
         />
       </div>
 
-      {/* Generate + Copy buttons */}
+      {/* Generate + Share buttons */}
       <div className={styles.group}>
         <label className={styles.label}>&nbsp;</label>
         <div className={styles.buttonRow}>
@@ -88,13 +96,34 @@ export function Controls({
             🎲 Generate New Lair
           </button>
           {lairHash && (
-            <button
-              className={`${styles.copyBtn} ${copied ? styles.copyBtnCopied : ''}`}
-              onClick={handleCopyLink}
-              title="Copy a link to this lair (without exploration progress)"
+            <div
+              className={styles.shareWrapper}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
             >
-              {copied ? '✓ Copied!' : '📋 Copy Lair Link'}
-            </button>
+              <button
+                className={`${styles.copyBtn} ${copiedType ? styles.copyBtnCopied : ''}`}
+                onClick={() => setShowDropdown(prev => !prev)}
+                title="Share this lair"
+              >
+                {shareLabel} ▾
+              </button>
+              {showDropdown && (
+                <div className={styles.dropdown}>
+                  <button
+                    className={styles.dropdownItem}
+                    onClick={() => handleCopy('full')}
+                  >
+                    👁 Copy Full View Link
+                  </button>
+                  <button
+                    className={styles.dropdownItem}
+                    onClick={() => handleCopy('explore')}
+                  >
+                    🗺 Copy Explore Link
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

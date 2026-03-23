@@ -4,6 +4,11 @@ import styles from './LairGrid.module.css';
 
 interface Props {
   lair: Lair;
+  explorationMode?: boolean;
+  revealedCells?: Set<string>;
+  explorableCells?: Set<string>;
+  selectedCell?: string | null;
+  onCellClick?: (key: string) => void;
 }
 
 function buildWallSets(walls: Wall[]): { south: Set<string>; east: Set<string> } {
@@ -29,7 +34,7 @@ const FEATURE_STYLE: Record<string, string> = {
   trap:    styles.featureTrap,
 };
 
-export function LairGrid({ lair }: Props) {
+export function LairGrid({ lair, explorationMode, revealedCells, explorableCells, selectedCell, onCellClick }: Props) {
   const { config, walls, features } = lair;
   const { rows, cols } = config;
   const { south: southWalls, east: eastWalls } = buildWallSets(walls);
@@ -61,6 +66,11 @@ export function LairGrid({ lair }: Props) {
               const cellKey = `${r},${c}`;
               const featureType = featureMap.get(cellKey);
 
+              const isRevealed = !explorationMode || (revealedCells?.has(cellKey) ?? false);
+              const isExplorable = explorationMode && (explorableCells?.has(cellKey) ?? false);
+              const isSelected = explorationMode && cellKey === selectedCell;
+              const isHidden = explorationMode && !isRevealed && !isExplorable;
+
               // Determine wall classes
               const classNames = [styles.cell];
               if (r === 0) classNames.push(styles.edgeNorth);
@@ -68,22 +78,41 @@ export function LairGrid({ lair }: Props) {
               if (c === 0) classNames.push(styles.edgeWest);
               if (c === cols - 1) classNames.push(styles.edgeEast);
 
-              // Internal walls on this cell's south edge
-              if (southWalls.has(cellKey)) classNames.push(styles.wallSouth);
-              // Internal walls on this cell's east edge
-              if (eastWalls.has(cellKey)) classNames.push(styles.wallEast);
-              // Internal walls from the cell above (its south = this cell's north)
-              if (r > 0 && southWalls.has(`${r - 1},${c}`)) classNames.push(styles.wallNorth);
-              // Internal walls from the cell to the left (its east = this cell's west)
-              if (c > 0 && eastWalls.has(`${r},${c - 1}`)) classNames.push(styles.wallWest);
+              if (isHidden) {
+                classNames.push(styles.cellHidden);
+              } else if (isExplorable) {
+                // Explorable cells show no internal walls — their contents are unknown
+                classNames.push(styles.cellExplorable);
+                if (isSelected) classNames.push(styles.cellSelected);
+              } else {
+                // Revealed cells: walls bordering another revealed cell are normal;
+                // walls bordering fog (unexplored) are red.
+                const southNeighborRevealed = !explorationMode || (revealedCells?.has(`${r + 1},${c}`) ?? true);
+                const eastNeighborRevealed  = !explorationMode || (revealedCells?.has(`${r},${c + 1}`) ?? true);
+                const northNeighborRevealed = !explorationMode || (revealedCells?.has(`${r - 1},${c}`) ?? true);
+                const westNeighborRevealed  = !explorationMode || (revealedCells?.has(`${r},${c - 1}`) ?? true);
+
+                if (southWalls.has(cellKey))
+                  classNames.push(southNeighborRevealed ? styles.wallSouth : styles.wallSouthFog);
+                if (eastWalls.has(cellKey))
+                  classNames.push(eastNeighborRevealed ? styles.wallEast : styles.wallEastFog);
+                if (r > 0 && southWalls.has(`${r - 1},${c}`))
+                  classNames.push(northNeighborRevealed ? styles.wallNorth : styles.wallNorthFog);
+                if (c > 0 && eastWalls.has(`${r},${c - 1}`))
+                  classNames.push(westNeighborRevealed ? styles.wallWest : styles.wallWestFog);
+              }
+
+              const handleClick = onCellClick ? () => onCellClick(cellKey) : undefined;
 
               return (
-                <div key={c} className={classNames.join(' ')}>
-                  {featureType && (
+                <div key={c} className={classNames.join(' ')} onClick={handleClick}>
+                  {isHidden ? null : isExplorable ? (
+                    <span className={isSelected ? styles.selectedLabel : styles.explorableLabel}>?</span>
+                  ) : featureType && isRevealed ? (
                     <div className={`${styles.feature} ${FEATURE_STYLE[featureType]}`}>
                       {FEATURE_LABELS[featureType]}
                     </div>
-                  )}
+                  ) : null}
                 </div>
               );
             })}

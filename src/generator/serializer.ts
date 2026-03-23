@@ -17,7 +17,10 @@ const CHAR_TO_FEATURE: Record<string, FeatureType> = {
  * - features: sequence of <row><col><typeChar> 3-char tuples
  * - walls: sequence of <row><col><dir> 3-char tuples (dir: 's'=south, 'e'=east)
  */
-export function encodeLair(lair: Lair): string {
+export function encodeLair(
+  lair: Lair,
+  explorationState?: { explorationMode: boolean; revealedCells: Set<string> }
+): string {
   const { config, walls, features } = lair;
   const gs = config.gridSize === 'base' ? 'b' : 'B';
   const fs = features
@@ -26,7 +29,15 @@ export function encodeLair(lair: Lair): string {
   const ws = walls
     .map(w => `${w.cell.row}${w.cell.col}${w.direction === 'south' ? 's' : 'e'}`)
     .join('');
-  return `${gs}:${config.wallCount}:${fs}:${ws}`;
+  const base = `${gs}:${config.wallCount}:${fs}:${ws}`;
+  if (explorationState?.explorationMode) {
+    const revealedStr = [...explorationState.revealedCells]
+      .sort()
+      .map(key => key.replace(',', ''))
+      .join('');
+    return `${base}:e:${revealedStr}`;
+  }
+  return base;
 }
 
 /**
@@ -67,6 +78,26 @@ export function decodeLair(hash: string): Lair | null {
     }
 
     return { config, walls, features };
+  } catch {
+    return null;
+  }
+}
+
+export function decodeExplorationState(hash: string): { explorationMode: boolean; revealedCells: Set<string> } | null {
+  try {
+    const raw = hash.startsWith('#') ? hash.slice(1) : hash;
+    const parts = raw.split(':');
+    if (parts.length < 6 || parts[4] !== 'e') return null;
+    const revealedStr = parts[5];
+    const revealedCells = new Set<string>();
+    for (let i = 0; i + 1 < revealedStr.length; i += 2) {
+      const row = parseInt(revealedStr[i], 10);
+      const col = parseInt(revealedStr[i + 1], 10);
+      if (!isNaN(row) && !isNaN(col)) {
+        revealedCells.add(`${row},${col}`);
+      }
+    }
+    return { explorationMode: true, revealedCells };
   } catch {
     return null;
   }

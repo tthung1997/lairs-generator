@@ -113,6 +113,7 @@ Use BFS where each state is `(space, monstersEncountered, trapsEncountered)` cap
 2. **Share via URL** — Encode lair state (grid size, wall positions, feature positions) in a URL hash/query param so players can share specific lairs
 3. **Lair Stats** — Show basic stats: number of dead ends, longest shortest-path to a goal, etc. Fun flavor text.
 4. **Seed-based Generation** — Optional seed input for reproducible lairs (useful for tournaments or sharing)
+5. **Exploration Mode (Fog of War)** — Toggle between Full View and Exploration mode for solo/co-op play. In Exploration mode, only the Start cell is revealed; players click adjacent reachable cells to reveal them one-by-one using a two-tap pattern (select → confirm). Includes Reset Exploration, Reveal All, and exploration progress display. URL sharing preserves exploration state.
 
 ---
 
@@ -166,3 +167,11 @@ lairs/
 8. **url-sharing** — Implement lair state serialization/deserialization for URL sharing
 9. **print-styles** — Add print-friendly CSS
 10. **github-pages-deploy** — Set up GitHub Actions workflow for auto-deployment
+11. **exploration-logic** — Build `src/generator/exploration.ts` with `getExplorableCells()` pure function using wall-aware adjacency
+12. **exploration-app-state** — Add `explorationMode`, `revealedCells`, `selectedCell` state to `App.tsx` with mode toggle and auto-reset on generation
+13. **exploration-controls** — Add Full View / Explore mode toggle, Reset Exploration, and Reveal All buttons to `Controls.tsx`
+14. **exploration-grid-rendering** — Modify `LairGrid.tsx` for fog of war: hidden (dark), explorable (?/pulse), selected (glow), revealed (normal) cell states
+15. **exploration-fog-css** — Add CSS classes for fog states, pulse animation, selected highlight, print support
+16. **exploration-cell-interaction** — Implement two-tap reveal pattern: first tap selects, second tap reveals, with edge case handling
+17. **exploration-url-serialization** — Extend URL hash format with exploration flag and revealed cells (backward compatible)
+18. **exploration-status** — Update `StatusBar.tsx` to show exploration progress ("12/36 explored")

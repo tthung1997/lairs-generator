@@ -287,7 +287,7 @@ Rule 2 (Use Everything) is guaranteed by the generator — it always places the 
 Encode the lair as a compact string in the URL hash:
 
 ```
-#<gridSize>:<wallCount>:<features>:<walls>
+#<gridSize>:<wallCount>:<features>:<walls>[:<explorationFlag>:<revealedCells>]
 ```
 
 **Components:**
@@ -299,11 +299,18 @@ Encode the lair as a compact string in the URL hash:
   - type: `s`/`x`/`c`/`m`/`t`
 - `walls`: sequence of encoded wall positions
   - Each wall: `<row><col><dir>` where dir = `s` (south) or `e` (east)
+- `explorationFlag` *(optional)*: `e` if exploration mode is active, omitted for full view
+- `revealedCells` *(optional)*: sequence of `<row><col>` pairs for all revealed cells
 
-**Example:** `#b:18:00s15x23c34c45c01m12m24m02t13t35t:01s03e12s...`
+**Example (full view):** `#b:18:00s15x23c34c45c01m12m24m02t13t35t:01s03e12s...`
+
+**Example (exploration):** `#b:18:00s15x23c...:01s03e...:e:000112`
+(reveals cells at (0,0), (0,1), and (1,2))
 
 ### 5.2 Decoding
 On page load, check `window.location.hash`. If present, decode and display the encoded lair (with validation). If invalid, ignore and generate a fresh lair.
+
+**Backward compatibility:** URLs with 4 segments (no exploration data) decode as full-view mode. URLs with 6 segments decode with exploration state.
 
 ---
 
@@ -317,14 +324,19 @@ App
 ├── Controls
 │   ├── GridSizeToggle
 │   ├── WallCountSlider
-│   └── GenerateButton
+│   ├── GenerateButton
+│   └── ExplorationToggle (Full View / Explore)
+│       ├── ResetExplorationButton
+│       └── RevealAllButton
 ├── LairGrid
 │   ├── ColumnLabels
 │   ├── GridRow (× rows)
 │   │   ├── RowLabel
 │   │   └── GridCell (× cols)
 │   │       ├── WallBorders
-│   │       └── FeatureIcon
+│   │       ├── FeatureIcon (if revealed)
+│   │       ├── FogOverlay (if hidden)
+│   │       └── ExplorableIndicator (if explorable)
 ├── Legend
 └── StatusBar
 ```
@@ -340,6 +352,11 @@ function App() {
   const [lair, setLair] = useState<Lair | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Exploration mode state
+  const [explorationMode, setExplorationMode] = useState(false);
+  const [revealedCells, setRevealedCells] = useState<Set<string>>(new Set());
+  const [selectedCell, setSelectedCell] = useState<string | null>(null);
+
   const generate = useCallback(() => {
     try {
       const config = buildConfig(gridSize, wallCount);
@@ -347,10 +364,16 @@ function App() {
       setLair(newLair);
       setError(null);
       updateUrlHash(newLair);
+      // Reset exploration to Start cell only
+      if (explorationMode) {
+        const startCell = newLair.features.find(f => f.type === 'start')!;
+        setRevealedCells(new Set([cellKey(startCell.cell)]));
+        setSelectedCell(null);
+      }
     } catch (e) {
       setError("Failed to generate a valid lair. Try adjusting wall count.");
     }
-  }, [gridSize, wallCount]);
+  }, [gridSize, wallCount, explorationMode]);
 
   // Generate on mount and when settings change
   useEffect(() => { generate(); }, [generate]);
@@ -407,7 +430,93 @@ The grid uses **CSS Grid** layout. Walls are rendered as thick borders on the ap
 
 ---
 
-## 7. Project Structure
+## 7. Exploration Mode (Fog of War)
+
+### 7.1 Overview
+
+Exploration mode transforms the generator from a static display tool into an interactive exploration experience for solo and co-op play. The full lair is generated and held in memory, but cells are hidden behind a "fog of war" until the player reveals them.
+
+### 7.2 Exploration State
+
+```typescript
+// Additional state in App.tsx
+explorationMode: boolean;              // false = Full View (default), true = Exploration
+revealedCells: Set<string>;            // cellKey strings of revealed cells
+selectedCell: string | null;           // cellKey of currently selected (pre-confirm) cell
+```
+
+### 7.3 Exploration Logic (`src/generator/exploration.ts`)
+
+Pure functions with no React dependency:
+
+```typescript
+function getExplorableCells(lair: Lair, revealedCells: Set<string>): Set<string> {
+  // For each revealed cell, check 4 orthogonal neighbors.
+  // A neighbor is explorable if:
+  //   1. Within grid bounds
+  //   2. Not already revealed
+  //   3. No wall blocks the edge between it and the revealed cell
+  // Uses buildAdjacencyGraph() from graph.ts for wall-aware neighbor lookup.
+}
+
+function isExplorable(
+  cellKey: string,
+  lair: Lair,
+  revealedCells: Set<string>
+): boolean {
+  // Check if a specific cell is explorable (in the explorable set).
+}
+```
+
+**Performance**: O(|revealedCells| × 4) per call — negligible for 36–48 cells.
+
+### 7.4 Cell Visual States
+
+| State | Appearance | Interaction |
+|-------|-----------|-------------|
+| **Revealed** | Normal (feature icon, walls visible) | No action |
+| **Explorable** | Fog overlay with "?" icon, subtle pulse animation | First tap → select |
+| **Selected** | Highlighted border/glow, "?" icon emphasized | Second tap → reveal |
+| **Hidden** | Dark/opaque fog, no feature, no walls | Not clickable |
+
+### 7.5 Two-Tap Reveal Interaction
+
+1. **Tap explorable cell** → cell becomes `selectedCell` (highlight + glow)
+2. **Tap same cell again** → cell is revealed (added to `revealedCells`, `selectedCell` cleared)
+3. **Tap different explorable cell** → selection moves to new cell
+4. **Tap non-explorable/revealed cell** → `selectedCell` cleared
+5. **Tap outside grid** → `selectedCell` cleared
+
+This pattern prevents accidental reveals on mobile and desktop. The visual selection state gives the player a moment to reconsider.
+
+### 7.6 Wall Visibility Rules
+
+- Wall between two **revealed** cells → **fully visible** (thick dark border)
+- Wall between a **revealed** and **unrevealed** cell → **visible** (player can see the wall blocking their path)
+- Wall between two **unrevealed** cells → **hidden** (default thin border)
+- Perimeter walls → **always visible** (grid boundary is always known)
+
+### 7.7 Exploration Controls
+
+Added to `Controls.tsx`:
+
+- **Mode toggle**: "👁 Full View" | "🗺️ Explore" — switches between modes
+- **Reset Exploration** button: re-hides all cells except Start (only visible in Exploration mode)
+- **Reveal All** button: reveals all cells, ending exploration (only visible in Exploration mode)
+
+### 7.8 Exploration Status Display
+
+In `StatusBar.tsx`, when exploration mode is active:
+- "Explored: **12/36** spaces" (revealed cells / total cells)
+- Optionally: "Features found: **5/11**" (revealed features / total features)
+
+### 7.9 Print in Exploration Mode
+
+When printing in Exploration mode, only revealed cells are shown. Hidden cells remain fogged (rendered as dark/blank). This preserves the exploration state on paper.
+
+---
+
+## 8. Project Structure
 
 ```
 lairs/
@@ -435,6 +544,7 @@ lairs/
 │   │   ├── generator.ts            # generateRandomLair, generateValidLair
 │   │   ├── validator.ts            # checkReachability, checkPerilRule
 │   │   ├── graph.ts                # buildAdjacencyGraph helper
+│   │   ├── exploration.ts          # getExplorableCells, exploration helpers
 │   │   └── serializer.ts           # URL encode/decode
 │   ├── main.tsx
 │   └── index.css                   # Global resets, CSS variables, print styles
@@ -456,9 +566,9 @@ lairs/
 
 ---
 
-## 8. Build & Deployment
+## 9. Build & Deployment
 
-### 8.1 Vite Configuration
+### 9.1 Vite Configuration
 
 ```typescript
 // vite.config.ts
@@ -474,7 +584,7 @@ export default defineConfig({
 });
 ```
 
-### 8.2 GitHub Actions Workflow
+### 9.2 GitHub Actions Workflow
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -509,7 +619,7 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-### 8.3 npm Scripts
+### 9.3 npm Scripts
 
 ```json
 {
@@ -523,29 +633,29 @@ jobs:
 
 ---
 
-## 9. Performance Considerations
+## 10. Performance Considerations
 
-### 9.1 Generation Speed
+### 10.1 Generation Speed
 - Each generation attempt (random placement + validation) is O(n) where n = grid spaces
 - For a 6×6 grid: ~36 spaces, ~60 wall slots → microseconds per attempt
 - At 10,000 max attempts × ~10μs each = ~100ms worst case
 - Expected: valid lair found within 100–1000 attempts in well under 1 second
 
-### 9.2 Bundle Size
+### 10.2 Bundle Size
 - React 18 (minified): ~40KB gzipped
 - Application code: estimated <10KB gzipped
 - Total: ~50KB — fast load on any connection
 
-### 9.3 Rendering
+### 10.3 Rendering
 - CSS Grid rendering is hardware-accelerated
 - Grid is small (36–48 cells) — no virtualization needed
 - Re-renders only on lair state change
 
 ---
 
-## 10. Testing Strategy
+## 11. Testing Strategy
 
-### 10.1 Unit Tests (generator logic)
+### 11.1 Unit Tests (generator logic)
 - `generator.ts`: verify feature counts and wall counts match config
 - `validator.ts`:
   - Known-valid lairs return `true`
@@ -553,19 +663,22 @@ jobs:
   - Lairs violating the Peril Rule return `false`
 - `serializer.ts`: round-trip encode/decode produces identical lairs
 
-### 10.2 Integration Tests
+### 11.2 Integration Tests
 - `generateValidLair()`: run 1,000 iterations, verify all pass `isValidLair()`
 - Both grid sizes tested
 
-### 10.3 Manual Testing
+### 11.3 Manual Testing
 - Visual inspection of generated grids
 - Print view verification
 - URL sharing round-trip
 - Tablet responsiveness
+- **Exploration mode**: fog rendering, two-tap reveal, wall visibility, explorable cell highlighting
+- **Exploration URL sharing**: encode/decode round-trip preserves revealed cells
+- **Exploration edge cases**: reveal all, reset exploration, mode toggle mid-exploration
 
 ---
 
-## 11. Future Considerations (Out of Scope for v1)
+## 12. Future Considerations (Out of Scope for v1)
 - **Seed-based generation**: Deterministic RNG with shareable seeds for tournaments
 - **Lair difficulty scoring**: Heuristic rating based on path complexity and hazard placement
 - **Lair editor**: Manual drag-and-drop placement with real-time validation

@@ -89,7 +89,28 @@ Every generated lair **must** satisfy all three rules:
 - Features shall be displayed with distinct icons and/or colors per type
 - Empty spaces shall be visually distinct from spaces containing features
 
-### 3.2 Additional Features
+### 3.2 Exploration Mode
+
+#### FR-8: Exploration Mode (Fog of War)
+- The user shall be able to toggle between **Full View** mode (default, current behavior) and **Exploration** mode
+- In Exploration mode, only the **Start cell** is revealed initially; all other cells are hidden ("fog of war")
+- Cells **adjacent and reachable** (not wall-blocked) from any revealed cell shall be visually marked as **explorable**
+- The user shall reveal explorable cells one at a time using a **two-tap interaction**: first tap selects/highlights the cell, second tap confirms the reveal
+  - Tapping a different explorable cell changes the selection
+  - Tapping a non-explorable or already-revealed cell clears the selection
+- When a cell is revealed, its feature (if any) and its walls become visible
+- Walls between two revealed cells shall be fully visible; walls between a revealed and unrevealed cell shall be visible from the revealed side; walls between two unrevealed cells shall be hidden
+- The user shall be able to **reset exploration** (re-hide all cells except Start) without generating a new lair
+- The user shall be able to **reveal all** cells at any time (ending exploration for that lair)
+- Generating a new lair while in Exploration mode shall automatically reset exploration to show only the new Start cell
+- Exploration progress (e.g., "12/36 spaces explored") shall be displayed in the status area
+
+#### FR-9: Exploration State Sharing
+- The URL hash shall encode exploration mode state (on/off) and which cells have been revealed
+- Sharing a URL in Exploration mode shall restore the exact exploration progress for the recipient
+- The encoding shall be **backward compatible**: URLs without exploration data shall default to Full View mode
+
+### 3.3 Additional Features
 
 #### FR-5: URL-Based Sharing
 - The current lair state shall be encoded in the URL (hash or query parameters)
@@ -158,17 +179,35 @@ Every generated lair **must** satisfy all three rules:
 3. User shares the URL with another player
 4. Recipient opens the URL and sees the exact same lair
 
-### 5.5 Print Flow
+### 5.5 Exploration Flow (Solo/Co-op Play)
+1. User generates a lair (or opens a shared URL)
+2. User toggles to **Exploration** mode
+3. Only the Start cell is visible; surrounding explorable cells show a "?" indicator
+4. User taps an explorable cell — it becomes **selected** (highlighted)
+5. User taps the same cell again — the cell is **revealed**, showing its feature and walls
+6. New explorable cells appear around the newly revealed cell
+7. User continues exploring cell-by-cell through the lair
+8. At any point, user can share the URL to let another player continue exploring the same lair from the same progress point
+9. User can tap **Reveal All** to end exploration and see the full lair
+
+### 5.6 Co-op Sharing Flow
+1. User generates a lair and toggles to Exploration mode
+2. User explores several cells
+3. User copies the URL and shares it with a co-op partner
+4. Partner opens the URL and sees the same lair with the same revealed cells
+5. Both players can continue exploring independently from that point
+
+### 5.7 Print Flow
 1. User generates a lair
 2. User presses Ctrl+P / Cmd+P (browser print)
 3. A clean, print-optimized layout of the lair grid is printed
+4. If in Exploration mode, only revealed cells are printed (hidden cells remain fogged)
 
 ---
 
 ## 6. Out of Scope (v1)
 - Adventurer's Pack expansions and custom monster/trap types
-- Multiplayer lair generation (each player generates separately)
 - Lair difficulty rating or scoring analysis
 - Mobile-first layout (tablet and desktop are primary targets)
 - Lair editor (manual placement with validation)
-- Game play tracking or scoring
+- Game play tracking or scoring beyond exploration reveal state

@@ -81,3 +81,65 @@
 .generateBtn:active {
   transform: scale(0.97);
 }
+
+.buttonRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.copyBtn {
+  padding: 0.6rem 1.1rem;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.copyBtn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.copyBtn:active {
+  transform: scale(0.97);
+}
+
+.copyBtnCopied {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #86efac;
+}
+
+.copyBtnCopied:hover {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.explorationActions {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.actionBtn {
+  padding: 0.3rem 0.75rem;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.actionBtn:hover {
+  background: #e5e7eb;
+}

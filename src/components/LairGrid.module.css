@@ -67,6 +67,12 @@
 .wallWest  { border-left: 4px solid #374151 !important; }
 .wallEast  { border-right: 4px solid #374151 !important; }
 
+/* Walls on the fog boundary — red to signal unexplored territory */
+.wallNorthFog { border-top: 4px solid #ef4444 !important; }
+.wallSouthFog { border-bottom: 4px solid #ef4444 !important; }
+.wallWestFog  { border-left: 4px solid #ef4444 !important; }
+.wallEastFog  { border-right: 4px solid #ef4444 !important; }
+
 /* Feature icons */
 .feature {
   width: 80%;
@@ -85,6 +91,39 @@
 .featureChest   { background: #fbbf24; color: #1a1a1a; }
 .featureMonster { background: #f87171; color: #fff; }
 .featureTrap    { background: #a78bfa; color: #fff; }
+
+.cellHidden {
+  background: #1f2937;
+  cursor: default;
+}
+
+.cellExplorable {
+  background: #374151;
+  cursor: pointer;
+}
+
+.cellSelected {
+  outline: 3px solid #60a5fa !important;
+  outline-offset: -3px;
+  z-index: 1;
+  background: #4b5563 !important;
+}
+
+.explorableLabel {
+  color: #9ca3af;
+  font-weight: 700;
+  font-size: 1.2rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+.selectedLabel {
+  color: #93c5fd;
+  font-weight: 700;
+  font-size: 1.1rem;
+  pointer-events: none;
+  user-select: none;
+}
 
 /* Print styles */
 @media print {
@@ -111,4 +150,7 @@
     width: 70% !important;
     height: 70% !important;
   }
+
+  .cellHidden { background: #1f2937 !important; }
+  .cellExplorable { background: #374151 !important; }
 }

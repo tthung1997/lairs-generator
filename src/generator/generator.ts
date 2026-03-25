@@ -1,6 +1,6 @@
-import type { Cell, Feature, Lair, LairConfig, Wall } from './types';
+import type { Cell, Feature, FeatureType, Lair, LairConfig, LadderPair, MultiplayerLair, MultiplayerLairConfig, Wall } from './types';
 import { getAllInternalWalls } from './graph';
-import { isValidLair } from './validator';
+import { isValidLair, isValidMultiplayerLair } from './validator';
 
 const MAX_ATTEMPTS = 10_000;
 
@@ -49,5 +49,76 @@ export function generateValidLair(config: LairConfig): Lair {
   }
   throw new Error(
     `Failed to generate a valid lair after ${MAX_ATTEMPTS} attempts. Try adjusting the wall count.`
+  );
+}
+
+function generateRandomMultiplayerLair(config: MultiplayerLairConfig): MultiplayerLair {
+  const allLevelCells = getAllCells({ rows: config.rows, cols: config.cols } as LairConfig);
+
+  // Step 1: Place ladder pairs at random coordinates (same coord on both levels)
+  // Rules say "at least one pair"; physical components support up to 2 pairs — pick randomly.
+  const actualLadderPairs = Math.floor(Math.random() * config.ladderPairs) + 1;
+  const shuffledForLadders = shuffle([...allLevelCells]);
+  const ladderCells = shuffledForLadders.slice(0, actualLadderPairs);
+  const ladders: LadderPair[] = ladderCells.map(cell => ({ cell }));
+  const ladderCellKeys = new Set(ladderCells.map(c => `${c.row},${c.col}`));
+
+  // Step 2: Pool available cells across both levels, excluding ladder cells
+  type LevelCell = { level: 'upper' | 'lower'; cell: Cell };
+  const availableCells: LevelCell[] = [];
+  for (const cell of allLevelCells) {
+    if (!ladderCellKeys.has(`${cell.row},${cell.col}`)) {
+      availableCells.push({ level: 'upper', cell });
+      availableCells.push({ level: 'lower', cell });
+    }
+  }
+  shuffle(availableCells);
+
+  // Step 3: Assign features randomly across both levels
+  let idx = 0;
+  const upperFeatures: Feature[] = [];
+  const lowerFeatures: Feature[] = [];
+
+  const assign = (type: FeatureType, count: number) => {
+    for (let i = 0; i < count; i++) {
+      const lc = availableCells[idx++];
+      const feature: Feature = { type, cell: lc.cell };
+      if (lc.level === 'upper') upperFeatures.push(feature);
+      else lowerFeatures.push(feature);
+    }
+  };
+
+  assign('start', config.starts);
+  assign('exit', 1);
+  assign('chest', config.chests);
+  assign('monster', config.monsters);
+  assign('trap', config.traps);
+
+  // Step 4: Distribute walls evenly between levels
+  const levelConfig = { rows: config.rows, cols: config.cols } as LairConfig;
+  const upperInternalWalls = shuffle(getAllInternalWalls(levelConfig));
+  const lowerInternalWalls = shuffle(getAllInternalWalls(levelConfig));
+
+  const upperWallCount = Math.ceil(config.wallCount / 2);
+  const lowerWallCount = Math.floor(config.wallCount / 2);
+
+  const upperWalls: Wall[] = upperInternalWalls.slice(0, upperWallCount);
+  const lowerWalls: Wall[] = lowerInternalWalls.slice(0, lowerWallCount);
+
+  return {
+    config,
+    upper: { walls: upperWalls, features: upperFeatures },
+    lower: { walls: lowerWalls, features: lowerFeatures },
+    ladders,
+  };
+}
+
+export function generateValidMultiplayerLair(config: MultiplayerLairConfig): MultiplayerLair {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    const lair = generateRandomMultiplayerLair(config);
+    if (isValidMultiplayerLair(lair)) return lair;
+  }
+  throw new Error(
+    `Failed to generate a valid multiplayer lair after ${MAX_ATTEMPTS} attempts. Try adjusting the wall count.`
   );
 }

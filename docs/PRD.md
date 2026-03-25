@@ -58,6 +58,27 @@ Every generated lair **must** satisfy all three rules:
 
 3. **The Peril Rule** — From the Start to each Goal (the Exit and every Chest), there must exist at least one path that passes through **at most one Monster** and **at most one Trap**. Passing through one of each is acceptable; passing through two of the same type is not. It is acceptable if *some* paths to a Goal are illegal, as long as at least one legal path exists.
 
+### 2.5 Multiplayer Mode (Deeper Dungeons Expansion)
+
+| Feature | Count (2 Explorers) | Count (3 Explorers) |
+|---------|--------------------|--------------------|
+| Start | 2 | 3 |
+| Exit | 1 | 1 |
+| Chest | 6 | 8 |
+| Monster | 6 | 8 |
+| Trap | 6 | 8 |
+| Ladders | 1–2 pairs | 1–2 pairs |
+| Walls | 34–40 (total) | 42–50 (total) |
+| Grid per level | 6×6 (Base) | 8×6 (Big) |
+| Levels | 2 (Upper + Lower) | 2 (Upper + Lower) |
+
+**Multiplayer Legality Rules:**
+1. **Cross-Level Reachability** — every cell on both levels must be reachable from any Start via orthogonal movement and ladders
+2. **Peril Rule (expanded)** — from any Start to each Goal, at least one path exists through ≤1 Monster and ≤1 Trap (paths may traverse ladders between levels)
+3. **Start-to-Start Connectivity** — each Start tile must be able to reach at least one other Start tile
+
+**Ladders** connect the two levels at matching grid coordinates. A ladder on the Upper level leads down; the matching ladder on the Lower level leads up. Ladders are neutral features (not empty, not hazards).
+
 ---
 
 ## 3. Functional Requirements
@@ -80,6 +101,16 @@ Every generated lair **must** satisfy all three rules:
 - Base (6×6): slider from 17 to 20
 - Big (8×6): slider from 20 to 25
 - Changing the wall count shall trigger regeneration
+
+#### FR-10: Multiplayer Mode
+- The user shall be able to toggle between Standard and Multiplayer lair types
+- In Multiplayer mode, the user shall choose 2 or 3 explorers
+- Grid size is determined by explorer count (2 → Base, 3 → Big)
+- A two-level lair (Upper + Lower) shall be generated with the appropriate feature counts
+- Ladder pairs (1–2 randomly) connect the levels at matching coordinates
+- Both levels are displayed side-by-side on desktop and stacked on mobile
+- Exploration mode works across both levels with ladder traversal
+- URL sharing works for multiplayer lairs (using `mp` prefix format)
 
 #### FR-4: Lair Visualization
 - The generated lair shall be displayed as a visual grid
@@ -203,10 +234,20 @@ Every generated lair **must** satisfy all three rules:
 3. A clean, print-optimized layout of the lair grid is printed
 4. If in Exploration mode, only revealed cells are printed (hidden cells remain fogged)
 
+### 5.8 Multiplayer Flow
+1. User selects "Multiplayer" lair type
+2. User chooses 2 or 3 explorers
+3. A two-level lair is generated and displayed (Upper and Lower levels)
+4. Ladders connecting the levels are shown with colored arrows (↑/↓)
+5. User adjusts wall count (34–40 for 2 explorers, 42–50 for 3)
+6. User can share the lair URL or switch to Exploration mode
+7. In Exploration mode, ladder cells auto-reveal the matching coordinate on the other level
+
 ---
 
 ## 6. Out of Scope (v1)
-- Adventurer's Pack expansions and custom monster/trap types
+- Other Deeper Dungeons expansion modules (Challenges, Terrain, Weird Walls, Boss Monsters, Characters)
+- Twist cards, Hourglass/Time mechanics (multiplayer gameplay, not lair building)
 - Lair difficulty rating or scoring analysis
 - Mobile-first layout (tablet and desktop are primary targets)
 - Lair editor (manual placement with validation)

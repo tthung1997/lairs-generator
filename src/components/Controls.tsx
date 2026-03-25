@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import type { GridSize } from '../generator/types';
-import { WALL_RANGES } from '../generator/config';
+import type { ExplorerCount, GridSize } from '../generator/types';
+import { WALL_RANGES, MULTIPLAYER_WALL_RANGES } from '../generator/config';
 import styles from './Controls.module.css';
 
 interface Props {
+  appMode: 'standard' | 'multiplayer';
+  explorerCount: ExplorerCount;
+  onAppModeChange: (mode: 'standard' | 'multiplayer') => void;
+  onExplorerCountChange: (count: ExplorerCount) => void;
   gridSize: GridSize;
   wallCount: number;
   onGridSizeChange: (size: GridSize) => void;
@@ -13,10 +17,14 @@ interface Props {
   onExplorationModeChange: (enabled: boolean) => void;
   onResetExploration: () => void;
   onRevealAll: () => void;
-  lairHash: string | null; // base lair hash without exploration state, for copying
+  lairHash: string | null;
 }
 
 export function Controls({
+  appMode,
+  explorerCount,
+  onAppModeChange,
+  onExplorerCountChange,
   gridSize,
   wallCount,
   onGridSizeChange,
@@ -28,13 +36,20 @@ export function Controls({
   onRevealAll,
   lairHash,
 }: Props) {
-  const range = WALL_RANGES[gridSize];
+  const range = appMode === 'multiplayer'
+    ? MULTIPLAYER_WALL_RANGES[explorerCount]
+    : WALL_RANGES[gridSize];
+
   const [showDropdown, setShowDropdown] = useState(false);
   const [copiedType, setCopiedType] = useState<'full' | 'explore' | null>(null);
 
   const handleCopy = (type: 'full' | 'explore') => {
     if (!lairHash) return;
-    const hash = type === 'explore' ? `${lairHash}:e:` : lairHash;
+    const hash = type === 'explore'
+      ? appMode === 'multiplayer'
+        ? `${lairHash}:eu::el:`
+        : `${lairHash}:e:`
+      : lairHash;
     const url = `${window.location.origin}${window.location.pathname}#${hash}`;
     setShowDropdown(false);
     navigator.clipboard.writeText(url).then(() => {
@@ -53,24 +68,63 @@ export function Controls({
 
   return (
     <div className={styles.controls}>
-      {/* Grid size toggle */}
+      {/* Lair Type toggle */}
       <div className={styles.group}>
-        <label className={styles.label}>Lair Size</label>
+        <label className={styles.label}>Lair Type</label>
         <div className={styles.toggle}>
           <button
-            className={`${styles.toggleBtn} ${gridSize === 'base' ? styles.active : ''}`}
-            onClick={() => onGridSizeChange('base')}
+            className={`${styles.toggleBtn} ${appMode === 'standard' ? styles.active : ''}`}
+            onClick={() => onAppModeChange('standard')}
           >
-            6×6 Base
+            ⚔️ Standard
           </button>
           <button
-            className={`${styles.toggleBtn} ${gridSize === 'big' ? styles.active : ''}`}
-            onClick={() => onGridSizeChange('big')}
+            className={`${styles.toggleBtn} ${appMode === 'multiplayer' ? styles.active : ''}`}
+            onClick={() => onAppModeChange('multiplayer')}
           >
-            8×6 Big
+            👥 Multiplayer
           </button>
         </div>
       </div>
+
+      {/* Grid size (standard) OR Explorer count (multiplayer) */}
+      {appMode === 'standard' ? (
+        <div className={styles.group}>
+          <label className={styles.label}>Lair Size</label>
+          <div className={styles.toggle}>
+            <button
+              className={`${styles.toggleBtn} ${gridSize === 'base' ? styles.active : ''}`}
+              onClick={() => onGridSizeChange('base')}
+            >
+              6×6 Base
+            </button>
+            <button
+              className={`${styles.toggleBtn} ${gridSize === 'big' ? styles.active : ''}`}
+              onClick={() => onGridSizeChange('big')}
+            >
+              8×6 Big
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.group}>
+          <label className={styles.label}>Explorers</label>
+          <div className={styles.toggle}>
+            <button
+              className={`${styles.toggleBtn} ${explorerCount === 2 ? styles.active : ''}`}
+              onClick={() => onExplorerCountChange(2)}
+            >
+              2 Players
+            </button>
+            <button
+              className={`${styles.toggleBtn} ${explorerCount === 3 ? styles.active : ''}`}
+              onClick={() => onExplorerCountChange(3)}
+            >
+              3 Players
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Wall count slider */}
       <div className={styles.group}>

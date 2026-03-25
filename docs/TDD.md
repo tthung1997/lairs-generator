@@ -27,8 +27,8 @@ The application is a **single-page, client-side web app** with no backend. All l
 | Component | Technology | Version |
 |-----------|-----------|---------|
 | Language | TypeScript | 5.x |
-| UI Framework | React | 18.x |
-| Build Tool | Vite | 5.x |
+| UI Framework | React | 19.x |
+| Build Tool | Vite | 8.x |
 | Styling | CSS Modules | (built-in with Vite) |
 | Deployment | GitHub Pages | via GitHub Actions |
 | Package Manager | npm | 10.x |
@@ -84,6 +84,53 @@ interface Lair {
   features: Feature[];
 }
 ```
+
+### 2.4 Multiplayer Types
+
+```typescript
+type ExplorerCount = 2 | 3;
+
+interface LairLevel {
+  walls: Wall[];
+  features: Feature[];
+}
+
+interface LadderPair {
+  cell: Cell;    // same coordinate on both upper and lower levels
+}
+
+interface MultiplayerLairConfig {
+  explorerCount: ExplorerCount;
+  gridSize: GridSize;
+  rows: number;      // 6 for 2 explorers, 8 for 3 explorers
+  cols: number;      // always 6
+  wallCount: number; // total walls across both levels
+  monsters: number;  // 6 for 2 explorers, 8 for 3
+  traps: number;     // 6 for 2 explorers, 8 for 3
+  chests: number;    // 6 for 2 explorers, 8 for 3
+  starts: number;    // equals explorerCount
+  ladderPairs: number;
+}
+
+interface MultiplayerLair {
+  config: MultiplayerLairConfig;
+  upper: LairLevel;
+  lower: LairLevel;
+  ladders: LadderPair[];
+}
+```
+
+### 2.5 Multiplayer Configuration
+
+| Param | 2 Explorers | 3 Explorers |
+|-------|-------------|-------------|
+| Grid | Base (6×6) | Big (8×6) |
+| Walls | 34–40 | 42–50 |
+| Monsters | 6 | 8 |
+| Traps | 6 | 8 |
+| Chests | 6 | 8 |
+| Starts | 2 | 3 |
+| Ladder pairs | 1–2 (random) | 1–2 (random) |
 
 ### 2.2 Wall Representation
 
@@ -280,6 +327,25 @@ Rule 2 (Use Everything) is guaranteed by the generator — it always places the 
 
 ---
 
+## 4A. Multiplayer Validation
+
+### 4A.1 Cross-Level Adjacency Graph
+
+`buildMultiplayerAdjacencyGraph()` creates a combined graph using level-prefixed keys (`"u:row,col"` / `"l:row,col"`):
+1. Build per-level blocked edge sets from walls
+2. Connect orthogonal neighbors within each level (respecting walls)
+3. Add bidirectional edges for each ladder pair between levels
+
+### 4A.2 Three Validation Checks
+
+`isValidMultiplayerLair()` performs:
+
+1. **Full Reachability** — BFS from any one start; all `rows × cols × 2` cells must be visited
+2. **Peril Rule** — Multi-source state-space BFS seeded from ALL starts simultaneously. State: `(levelCellKey, monstersHit: 0|1, trapsHit: 0|1)`. Every goal must be reachable in at least one valid state.
+3. **Start-to-Start** — Per-start BFS verifying each start can reach at least one other start through the combined graph.
+
+---
+
 ## 5. URL Serialization
 
 ### 5.1 Encoding Scheme
@@ -314,6 +380,30 @@ On page load, check `window.location.hash`. If present, decode and display the e
 
 ---
 
+## 5A. Multiplayer URL Serialization
+
+### 5A.1 Format
+
+```
+#mp<explorerCount>:<wallCount>:<upperFeatures>:<upperWalls>:<lowerFeatures>:<lowerWalls>:<ladders>
+```
+
+- `mp2` or `mp3` prefix distinguishes multiplayer from standard hashes
+- Features/walls encoded the same way as standard (3-char tuples)
+- Ladders encoded as 2-char `<row><col>` pairs
+
+### 5A.2 Exploration Suffix
+
+```
+:<base>:eu:<upperRevealedCells>:el:<lowerRevealedCells>
+```
+
+### 5A.3 Backward Compatibility
+
+`isMultiplayerHash()` checks for `mp` prefix. Standard hashes (`b:` / `B:`) continue to decode normally. `decodeLair()` safely returns `null` for multiplayer hashes.
+
+---
+
 ## 6. Component Architecture
 
 ### 6.1 Component Tree
@@ -337,6 +427,9 @@ App
 │   │       ├── FeatureIcon (if revealed)
 │   │       ├── FogOverlay (if hidden)
 │   │       └── ExplorableIndicator (if explorable)
+├── MultiplayerView (multiplayer mode)
+│   ├── LevelLabel ("Upper Level" / "Lower Level")
+│   └── LairGrid (× 2, one per level)
 ├── Legend
 └── StatusBar
 ```
@@ -534,18 +627,20 @@ lairs/
 │   │   ├── Controls.module.css
 │   │   ├── LairGrid.tsx            # Grid rendering with walls + features
 │   │   ├── LairGrid.module.css
+│   │   ├── MultiplayerView.tsx    # Two-level multiplayer lair display
+│   │   ├── MultiplayerView.module.css
 │   │   ├── StatusBar.tsx
 │   │   ├── StatusBar.module.css
 │   │   ├── Legend.tsx
 │   │   └── Legend.module.css
 │   ├── generator/
-│   │   ├── types.ts                # All TypeScript interfaces/types
-│   │   ├── config.ts               # Grid presets, wall ranges
-│   │   ├── generator.ts            # generateRandomLair, generateValidLair
-│   │   ├── validator.ts            # checkReachability, checkPerilRule
-│   │   ├── graph.ts                # buildAdjacencyGraph helper
-│   │   ├── exploration.ts          # getExplorableCells, exploration helpers
-│   │   └── serializer.ts           # URL encode/decode
+│   │   ├── types.ts                # All TypeScript interfaces/types (incl. multiplayer)
+│   │   ├── config.ts               # Grid presets, wall ranges, multiplayer config
+│   │   ├── generator.ts            # generateRandomLair, generateValidLair, multiplayer generation
+│   │   ├── validator.ts            # checkReachability, checkPerilRule, multiplayer validation
+│   │   ├── graph.ts                # buildAdjacencyGraph, buildMultiplayerAdjacencyGraph
+│   │   ├── exploration.ts          # getExplorableCells, multiplayer exploration helpers
+│   │   └── serializer.ts           # URL encode/decode, multiplayer serialization
 │   ├── main.tsx
 │   └── index.css                   # Global resets, CSS variables, print styles
 ├── public/
@@ -682,5 +777,5 @@ jobs:
 - **Seed-based generation**: Deterministic RNG with shareable seeds for tournaments
 - **Lair difficulty scoring**: Heuristic rating based on path complexity and hazard placement
 - **Lair editor**: Manual drag-and-drop placement with real-time validation
-- **Adventurer's Pack support**: Additional monster/trap types, expanded rules
+- **Other Deeper Dungeons modules**: Challenges, Terrain, Weird Walls, Bosses, Characters
 - **Animated generation**: Step-by-step visual animation of the generation process

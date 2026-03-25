@@ -26,6 +26,25 @@ Build a **client-side web app** (React + TypeScript + Vite) that generates rando
 - Features: Start, Exit, Chests (Goals), Monsters, Traps (Hazards)
 - Walls go on borders between spaces (internal edges only; outer perimeter is always walled)
 
+### Multiplayer Rules (Deeper Dungeons Expansion)
+
+| Param | 2 Explorers | 3 Explorers |
+|-------|-------------|-------------|
+| Grid per level | 6×6 (Base) | 8×6 (Big) |
+| Levels | 2 (Upper + Lower) | 2 (Upper + Lower) |
+| Walls (total) | 34–40 | 42–50 |
+| Monsters | 6 | 8 |
+| Traps | 6 | 8 |
+| Chests | 6 | 8 |
+| Starts | 2 | 3 |
+| Exit | 1 | 1 |
+| Ladder pairs | 1–2 (random) | 1–2 (random) |
+
+Additional rules:
+- Ladders connect levels at matching coordinates (neutral features)
+- Every goal must have a peril-rule-legal path to at least one start (through ladders)
+- Every start must reach at least one other start
+
 ---
 
 ## Tech Stack
@@ -129,12 +148,15 @@ lairs/
 │   │   ├── LairGrid.tsx            # Grid visualization (the main visual)
 │   │   ├── LairGrid.module.css     # Grid styles
 │   │   ├── StatusBar.tsx           # Component counts, validity
-│   │   └── Legend.tsx              # Feature icon legend
+│   │   ├── Legend.tsx              # Feature icon legend
+│   │   ├── MultiplayerView.tsx    # Two-level multiplayer lair display
+│   │   └── MultiplayerView.module.css # Multiplayer view styles
 │   ├── generator/
 │   │   ├── types.ts                # Grid, Wall, Feature, LairConfig types
 │   │   ├── generator.ts            # Random lair generation logic
 │   │   ├── validator.ts            # Reachability + Peril Rule validation
-│   │   └── serializer.ts           # URL encoding/decoding for sharing
+│   │   ├── serializer.ts           # URL encoding/decoding for sharing
+│   │   └── exploration.ts         # Exploration mode logic
 │   ├── main.tsx                    # Entry point
 │   └── index.css                   # Global styles
 ├── public/
@@ -175,3 +197,16 @@ lairs/
 16. **exploration-cell-interaction** — Implement two-tap reveal pattern: first tap selects, second tap reveals, with edge case handling
 17. **exploration-url-serialization** — Extend URL hash format with exploration flag and revealed cells (backward compatible)
 18. **exploration-status** — Update `StatusBar.tsx` to show exploration progress ("12/36 explored")
+19. **multiplayer-types** — Add `ExplorerCount`, `LairLevel`, `LadderPair`, `MultiplayerLairConfig`, `MultiplayerLair` types
+20. **multiplayer-config** — Add `MULTIPLAYER_WALL_RANGES`, `DEFAULT_MULTIPLAYER_WALL_COUNT`, `buildMultiplayerConfig()`
+21. **multiplayer-graph** — Add `levelCellKey()`, `parseLevelCell()`, `buildMultiplayerAdjacencyGraph()` for cross-level adjacency
+22. **multiplayer-validator** — Add `isValidMultiplayerLair()` with reachability, peril rule, and start-to-start checks
+23. **multiplayer-generator** — Add `generateValidMultiplayerLair()` with ladder placement, cross-level feature distribution
+24. **multiplayer-serializer** — Add `encodeMultiplayerLair()`, `decodeMultiplayerLair()`, `isMultiplayerHash()` with `mp` prefix format
+25. **multiplayer-ui-controls** — Add Lair Type toggle (Standard/Multiplayer), Explorer count selector, dynamic wall range
+26. **multiplayer-ui-view** — Create `MultiplayerView` component: two `LairGrid`s side-by-side (desktop) / stacked (mobile)
+27. **multiplayer-ui-grid** — Add ladder cell rendering to `LairGrid` with colored directional arrows
+28. **multiplayer-app-state** — Integrate multiplayer state management, URL sync, exploration with ladder traversal
+29. **multiplayer-exploration** — Add `getMultiplayerStartCellKeys()`, `getLadderCellKeys()` helpers
+30. **multiplayer-statusbar** — Update StatusBar for multiplayer stats (per-level walls, ladder count)
+31. **multiplayer-legend** — Add ladder entries to Legend in multiplayer mode

@@ -1,4 +1,4 @@
-import type { Lair } from './types';
+import type { Lair, MultiplayerLair } from './types';
 import { buildAdjacencyGraph, cellKey } from './graph';
 
 /**
@@ -33,4 +33,18 @@ export function getStartCellKey(lair: Lair): string {
   const start = lair.features.find(f => f.type === 'start');
   if (!start) throw new Error('Lair has no start cell');
   return cellKey(start.cell);
+}
+
+export function getMultiplayerStartCellKeys(lair: MultiplayerLair): { upper: string[]; lower: string[] } {
+  const upper = lair.upper.features
+    .filter(f => f.type === 'start')
+    .map(f => cellKey(f.cell));
+  const lower = lair.lower.features
+    .filter(f => f.type === 'start')
+    .map(f => cellKey(f.cell));
+  return { upper, lower };
+}
+
+export function getLadderCellKeys(lair: MultiplayerLair): Set<string> {
+  return new Set(lair.ladders.map(l => cellKey(l.cell)));
 }

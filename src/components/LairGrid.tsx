@@ -9,6 +9,7 @@ interface Props {
   explorableCells?: Set<string>;
   selectedCell?: string | null;
   onCellClick?: (key: string) => void;
+  ladderCells?: Map<string, { direction: 'up' | 'down'; pairIndex: number }>;
 }
 
 function buildWallSets(walls: Wall[]): { south: Set<string>; east: Set<string> } {
@@ -34,7 +35,7 @@ const FEATURE_STYLE: Record<string, string> = {
   trap:    styles.featureTrap,
 };
 
-export function LairGrid({ lair, explorationMode, revealedCells, explorableCells, selectedCell, onCellClick }: Props) {
+export function LairGrid({ lair, explorationMode, revealedCells, explorableCells, selectedCell, onCellClick, ladderCells }: Props) {
   const { config, walls, features } = lair;
   const { rows, cols } = config;
   const { south: southWalls, east: eastWalls } = buildWallSets(walls);
@@ -112,7 +113,14 @@ export function LairGrid({ lair, explorationMode, revealedCells, explorableCells
                     <div className={`${styles.feature} ${FEATURE_STYLE[featureType]}`}>
                       {FEATURE_LABELS[featureType]}
                     </div>
-                  ) : null}
+                  ) : isRevealed && ladderCells?.has(cellKey) ? (() => {
+                    const ladder = ladderCells.get(cellKey)!;
+                    return (
+                      <div className={`${styles.feature} ${styles.featureLadder} ${styles[`ladderColor${ladder.pairIndex}`]}`}>
+                        {ladder.direction === 'up' ? '↑' : '↓'}
+                      </div>
+                    );
+                  })() : null}
                 </div>
               );
             })}

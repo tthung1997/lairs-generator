@@ -14,6 +14,8 @@ Setting up a lair in Lairs requires each player to place walls, monsters, traps,
 - 🎲 **One-click generation** — get a new valid lair instantly
 - 📐 **Two grid sizes** — 6×6 (Base game) and 8×6 (Big lair variant)
 - 🧱 **Adjustable wall count** — slider within the allowed range per variant
+- 🗺️ **Exploration mode** — fog of war for solo/co-op play with two-tap cell reveal and shareable exploration progress
+- 👥 **Multiplayer mode** — generates two-level lairs (Upper + Lower) from the Deeper Dungeons expansion for 2–3 explorers, with ladders connecting levels, multiple start tiles, and cross-level peril rule validation
 - 🔗 **Shareable URLs** — every lair is encoded in the URL, share it with your opponent
 - 🖨️ **Print-friendly** — clean black & white output for physical reference during setup
 
@@ -24,8 +26,8 @@ Setting up a lair in Lairs requires each player to place walls, monsters, traps,
 
 ## Tech stack
 
-- **React 18 + TypeScript** — UI and type safety
-- **Vite** — build tool
+- **React 19 + TypeScript** — UI and type safety
+- **Vite 8** — build tool
 - **CSS Modules** — scoped styles
 - **GitHub Pages** — hosting (auto-deploy via GitHub Actions)
 

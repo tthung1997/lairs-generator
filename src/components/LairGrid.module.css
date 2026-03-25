@@ -92,6 +92,16 @@
 .featureMonster { background: #f87171; color: #fff; }
 .featureTrap    { background: #a78bfa; color: #fff; }
 
+.featureLadder {
+  background: #6b7280;
+  color: #fff;
+  font-size: 1.3rem;
+}
+
+/* Pair color coding (up to 2 pairs) */
+.ladderColor0 { background: #f97316; color: #fff; } /* orange */
+.ladderColor1 { background: #0d9488; color: #fff; } /* teal */
+
 .cellHidden {
   background: #1f2937;
   cursor: default;

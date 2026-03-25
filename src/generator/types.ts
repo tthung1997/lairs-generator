@@ -43,3 +43,35 @@ export interface WallRange {
   min: number;
   max: number;
 }
+
+// Multiplayer types
+export type ExplorerCount = 2 | 3;
+
+export interface LairLevel {
+  walls: Wall[];
+  features: Feature[];
+}
+
+export interface LadderPair {
+  cell: Cell; // same coordinate on both upper and lower levels
+}
+
+export interface MultiplayerLairConfig {
+  explorerCount: ExplorerCount;
+  gridSize: GridSize;
+  rows: number;      // 6 for 2 explorers (base), 8 for 3 explorers (big)
+  cols: number;      // always 6
+  wallCount: number; // total walls across both levels combined
+  monsters: number;  // 6 for 2 explorers, 8 for 3 explorers
+  traps: number;     // 6 for 2 explorers, 8 for 3 explorers
+  chests: number;    // 6 for 2 explorers, 8 for 3 explorers
+  starts: number;    // equals explorerCount (2 or 3)
+  ladderPairs: number; // number of ladder pairs connecting the levels (1–2)
+}
+
+export interface MultiplayerLair {
+  config: MultiplayerLairConfig;
+  upper: LairLevel;      // upper level board
+  lower: LairLevel;      // lower level board
+  ladders: LadderPair[]; // the connecting ladder pairs
+}

@@ -4,16 +4,21 @@ import { cellKey } from './graph';
 
 export type TrackerDirection = 'north' | 'south' | 'east' | 'west';
 export type TrackerLevels = 1 | 2;
+export type TrackerMark = FeatureType | 'ladderUp' | 'ladderDown';
+export type TrackerLevel = 'upper' | 'lower';
 
 // One paper "map sheet": what an Explorer has drawn so far.
 // Walls use the south/east-only convention: "row,col,s" or "row,col,e".
+// In two-level lairs Explorers don't know which level they start on, so
+// `level` stays null until they work it out (e.g. by finding a Ladder).
 export interface TrackerSheet {
   rows: number;
   cols: number;
   known: string[];
   walls: string[];
-  marks: Record<string, FeatureType>;
+  marks: Record<string, TrackerMark>;
   tracker: string | null;
+  level: TrackerLevel | null;
 }
 
 export interface TrackerState {
@@ -23,7 +28,7 @@ export interface TrackerState {
 }
 
 export function createTrackerSheet(rows: number, cols: number): TrackerSheet {
-  return { rows, cols, known: [], walls: [], marks: {}, tracker: null };
+  return { rows, cols, known: [], walls: [], marks: {}, tracker: null, level: null };
 }
 
 export function createTrackerState(gridSize: GridSize, levels: TrackerLevels): TrackerState {
@@ -88,7 +93,7 @@ export function toggleWall(
 }
 
 // Placing the feature that is already in the space removes it.
-export function toggleMark(sheet: TrackerSheet, cell: Cell, mark: FeatureType): TrackerSheet {
+export function toggleMark(sheet: TrackerSheet, cell: Cell, mark: TrackerMark): TrackerSheet {
   if (!inBounds(sheet, cell)) return sheet;
   const key = cellKey(cell);
   const marks = { ...sheet.marks };
@@ -114,7 +119,80 @@ export function resetTrackerSheet(sheet: TrackerSheet): TrackerSheet {
   return createTrackerSheet(sheet.rows, sheet.cols);
 }
 
-const FEATURE_TYPES: readonly string[] = ['start', 'exit', 'chest', 'monster', 'trap'];
+function withSheet(state: TrackerState, index: number, sheet: TrackerSheet): TrackerState {
+  return { ...state, sheets: state.sheets.map((s, i) => (i === index ? sheet : s)) };
+}
+
+function otherLevel(level: TrackerLevel): TrackerLevel {
+  return level === 'upper' ? 'lower' : 'upper';
+}
+
+// Sets (or clears, with null) which level a map is. The other map of a
+// two-level lair is always the opposite level, so both are updated together.
+export function setSheetLevel(
+  state: TrackerState,
+  index: number,
+  level: TrackerLevel | null
+): TrackerState {
+  if (state.levels !== 2 || index < 0 || index >= state.sheets.length) return state;
+  return {
+    ...state,
+    sheets: state.sheets.map((s, i) => ({
+      ...s,
+      level: level === null ? null : i === index ? level : otherLevel(level),
+    })),
+  };
+}
+
+// Places a mark on one map. Finding a Ladder reveals which level you are on
+// (Up Ladders are on the Lower level, Down Ladders on the Upper level), so an
+// unlabeled pair of maps is labeled automatically.
+export function placeMark(
+  state: TrackerState,
+  index: number,
+  cell: Cell,
+  mark: TrackerMark
+): TrackerState {
+  const sheet = state.sheets[index];
+  if (!sheet) return state;
+  const updated = toggleMark(sheet, cell, mark);
+  const next = withSheet(state, index, updated);
+  const isLadder = mark === 'ladderUp' || mark === 'ladderDown';
+  const placed = updated.marks[cellKey(cell)] === mark;
+  if (isLadder && placed && state.levels === 2 && state.sheets.every(s => s.level === null)) {
+    return setSheetLevel(next, index, mark === 'ladderUp' ? 'lower' : 'upper');
+  }
+  return next;
+}
+
+// There is only one Explorer, so the Tracker lives on exactly one map.
+export function moveTrackerTo(state: TrackerState, index: number, cell: Cell): TrackerState {
+  const sheet = state.sheets[index];
+  if (!sheet || !inBounds(sheet, cell)) return state;
+  return {
+    ...state,
+    sheets: state.sheets.map((s, i) => ({ ...s, tracker: i === index ? cellKey(cell) : null })),
+  };
+}
+
+export function canClimbLadder(state: TrackerState, index: number): boolean {
+  const sheet = state.sheets[index];
+  if (state.levels !== 2 || !sheet || sheet.tracker === null) return false;
+  const mark = sheet.marks[sheet.tracker];
+  return mark === 'ladderUp' || mark === 'ladderDown';
+}
+
+// Climbing or descending moves the Tracker to the same coordinate on the other map.
+export function climbLadder(state: TrackerState, index: number): TrackerState {
+  if (!canClimbLadder(state, index)) return state;
+  const key = state.sheets[index].tracker;
+  return {
+    ...state,
+    sheets: state.sheets.map((s, i) => ({ ...s, tracker: i === index ? null : key })),
+  };
+}
+
+const MARK_TYPES: readonly string[] = ['start', 'exit', 'chest', 'monster', 'trap', 'ladderUp', 'ladderDown'];
 const CELL_KEY = /^(\d+),(\d+)$/;
 const WALL_KEY = /^(\d+),(\d+),[se]$/;
 
@@ -136,16 +214,17 @@ function parseSheet(value: unknown, rows: number, cols: number): TrackerSheet | 
 
   const known = v.known.filter(k => CELL_KEY.test(k) && cellKeyInBounds(k, rows, cols));
   const walls = v.walls.filter(k => WALL_KEY.test(k) && cellKeyInBounds(k, rows, cols));
-  const marks: Record<string, FeatureType> = {};
+  const marks: Record<string, TrackerMark> = {};
   for (const [k, m] of Object.entries(v.marks as Record<string, unknown>)) {
-    if (CELL_KEY.test(k) && cellKeyInBounds(k, rows, cols) && typeof m === 'string' && FEATURE_TYPES.includes(m)) {
-      marks[k] = m as FeatureType;
+    if (CELL_KEY.test(k) && cellKeyInBounds(k, rows, cols) && typeof m === 'string' && MARK_TYPES.includes(m)) {
+      marks[k] = m as TrackerMark;
     }
   }
   const tracker = v.tracker !== null && cellKeyInBounds(v.tracker as string, rows, cols)
     ? (v.tracker as string)
     : null;
-  return { rows, cols, known, walls, marks, tracker };
+  const level = v.level === 'upper' || v.level === 'lower' ? v.level : null;
+  return { rows, cols, known, walls, marks, tracker, level };
 }
 
 export function serializeTrackerState(state: TrackerState): string {
@@ -170,7 +249,10 @@ export function parseTrackerState(raw: string | null): TrackerState | null {
       if (!sheet) return null;
       sheets.push(sheet);
     }
-    return { gridSize: d.gridSize, levels: d.levels, sheets };
+    const parsed: TrackerState = { gridSize: d.gridSize, levels: d.levels, sheets };
+    if (d.levels === 1) return { ...parsed, sheets: [{ ...sheets[0], level: null }] };
+    const labeled = sheets.findIndex(s => s.level !== null);
+    return labeled === -1 ? parsed : setSheetLevel(parsed, labeled, sheets[labeled].level);
   } catch {
     return null;
   }

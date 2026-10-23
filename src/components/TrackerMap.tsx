@@ -1,35 +1,47 @@
 import { useState } from 'react';
-import type { Cell, FeatureType, GridSize } from '../generator/types';
+import type { Cell, GridSize } from '../generator/types';
 import { ROW_LABELS } from '../generator/config';
 import {
+  canClimbLadder,
+  climbLadder,
   clearMark,
   createTrackerState,
   hasWall,
-  moveTracker,
+  moveTrackerTo,
+  placeMark,
   resetTrackerSheet,
+  setSheetLevel,
   toggleKnown,
-  toggleMark,
   toggleWall,
 } from '../generator/tracker';
-import type { TrackerDirection, TrackerLevels, TrackerSheet, TrackerState } from '../generator/tracker';
+import type {
+  TrackerDirection,
+  TrackerLevel,
+  TrackerLevels,
+  TrackerMark,
+  TrackerSheet,
+  TrackerState,
+} from '../generator/tracker';
 import styles from './TrackerMap.module.css';
 
-type Tool = 'known' | 'wall' | 'tracker' | 'erase' | FeatureType;
+type Tool = 'known' | 'wall' | 'tracker' | 'erase' | TrackerMark;
 
-const TOOLS: { tool: Tool; label: string; name: string }[] = [
-  { tool: 'known',   label: '○',  name: 'Known' },
-  { tool: 'wall',    label: '▭',  name: 'Wall' },
-  { tool: 'start',   label: 'S',  name: 'Start' },
-  { tool: 'exit',    label: 'X',  name: 'Exit' },
-  { tool: 'chest',   label: 'C',  name: 'Chest' },
-  { tool: 'monster', label: 'M',  name: 'Monster' },
-  { tool: 'trap',    label: 'T',  name: 'Trap' },
-  { tool: 'tracker', label: '📍', name: 'Tracker' },
-  { tool: 'erase',   label: '⌫',  name: 'Erase' },
+const TOOLS: { tool: Tool; label: string; name: string; twoLevelsOnly?: boolean }[] = [
+  { tool: 'known',      label: '○',  name: 'Known' },
+  { tool: 'wall',       label: '▭',  name: 'Wall' },
+  { tool: 'start',      label: 'S',  name: 'Start' },
+  { tool: 'exit',       label: 'X',  name: 'Exit' },
+  { tool: 'chest',      label: 'C',  name: 'Chest' },
+  { tool: 'monster',    label: 'M',  name: 'Monster' },
+  { tool: 'trap',       label: 'T',  name: 'Trap' },
+  { tool: 'ladderUp',   label: '↑',  name: 'Up Ladder', twoLevelsOnly: true },
+  { tool: 'ladderDown', label: '↓',  name: 'Down Ladder', twoLevelsOnly: true },
+  { tool: 'tracker',    label: '📍', name: 'Tracker' },
+  { tool: 'erase',      label: '⌫',  name: 'Erase' },
 ];
 
-const MARK_LABELS: Record<FeatureType, string> = {
-  start: 'S', exit: 'X', chest: 'C', monster: 'M', trap: 'T',
+const MARK_LABELS: Record<TrackerMark, string> = {
+  start: 'S', exit: 'X', chest: 'C', monster: 'M', trap: 'T', ladderUp: '↑', ladderDown: '↓',
 };
 
 const DIRECTIONS: TrackerDirection[] = ['north', 'south', 'east', 'west'];
@@ -48,31 +60,40 @@ const EDGE_CLASS: Record<TrackerDirection, string> = {
   west: styles.edgeWest,
 };
 
-const LEVEL_LABELS = ['🔼 Upper Level', '🔽 Lower Level'];
+const LEVEL_TITLES: Record<TrackerLevel, string> = {
+  upper: '🔼 Upper Level',
+  lower: '🔽 Lower Level',
+};
 
 interface SheetProps {
-  sheet: TrackerSheet;
+  state: TrackerState;
+  index: number;
   tool: Tool;
-  onChange: (sheet: TrackerSheet) => void;
+  onChange: (state: TrackerState) => void;
 }
 
-function TrackerSheetView({ sheet, tool, onChange }: SheetProps) {
+function TrackerSheetView({ state, index, tool, onChange }: SheetProps) {
+  const sheet = state.sheets[index];
   const known = new Set(sheet.known);
   const colNums = Array.from({ length: sheet.cols }, (_, i) => i + 1);
   const rowIndices = Array.from({ length: sheet.rows }, (_, i) => i);
 
+  const updateSheet = (updated: TrackerSheet) => {
+    onChange({ ...state, sheets: state.sheets.map((s, i) => (i === index ? updated : s)) });
+  };
+
   const handleCellClick = (cell: Cell) => {
     switch (tool) {
       case 'known':
-        return onChange(toggleKnown(sheet, cell));
+        return updateSheet(toggleKnown(sheet, cell));
       case 'tracker':
-        return onChange(moveTracker(sheet, cell));
+        return onChange(moveTrackerTo(state, index, cell));
       case 'erase':
-        return onChange(clearMark(sheet, cell));
+        return updateSheet(clearMark(sheet, cell));
       case 'wall':
         return;
       default:
-        return onChange(toggleMark(sheet, cell, tool));
+        return onChange(placeMark(state, index, cell, tool));
     }
   };
 
@@ -91,6 +112,7 @@ function TrackerSheetView({ sheet, tool, onChange }: SheetProps) {
             const key = `${r},${c}`;
             const mark = sheet.marks[key];
             const classNames = [styles.cell];
+            if (sheet.tracker === key) classNames.push(styles.cellTracker);
             for (const dir of DIRECTIONS) {
               if (hasWall(sheet, cell, dir)) classNames.push(WALL_CLASS[dir]);
             }
@@ -110,7 +132,7 @@ function TrackerSheetView({ sheet, tool, onChange }: SheetProps) {
                 {mark && (
                   <div className={`${styles.mark} ${styles[`mark_${mark}`]}`}>{MARK_LABELS[mark]}</div>
                 )}
-                {sheet.tracker === key && <div className={styles.tracker}>📍</div>}
+                {sheet.tracker === key && <div className={styles.tracker} title="Tracker">📍</div>}
                 {tool === 'wall' && DIRECTIONS.map(dir => {
                   const isPerimeter =
                     (dir === 'north' && r === 0) ||
@@ -126,7 +148,7 @@ function TrackerSheetView({ sheet, tool, onChange }: SheetProps) {
                       aria-label={`Toggle ${dir} wall of ${ROW_LABELS[r]}${c + 1}`}
                       onClick={e => {
                         e.stopPropagation();
-                        onChange(toggleWall(sheet, cell, dir));
+                        updateSheet(toggleWall(sheet, cell, dir));
                       }}
                     />
                   );
@@ -146,11 +168,12 @@ interface Props {
 }
 
 export function TrackerMap({ state, onChange }: Props) {
-  const [tool, setTool] = useState<Tool>('known');
-
-  const updateSheet = (index: number, sheet: TrackerSheet) => {
-    onChange({ ...state, sheets: state.sheets.map((s, i) => (i === index ? sheet : s)) });
-  };
+  const [selectedTool, setSelectedTool] = useState<Tool>('known');
+  const twoLevels = state.levels === 2;
+  const tools = TOOLS.filter(t => twoLevels || !t.twoLevelsOnly);
+  // Ladder tools disappear in 1-level mode; fall back if one was selected.
+  const tool: Tool = tools.some(t => t.tool === selectedTool) ? selectedTool : 'known';
+  const climbFrom = state.sheets.findIndex((_, i) => canClimbLadder(state, i));
 
   const changeLayout = (gridSize: GridSize, levels: TrackerLevels) => {
     if (gridSize === state.gridSize && levels === state.levels) return;
@@ -207,11 +230,11 @@ export function TrackerMap({ state, onChange }: Props) {
       </div>
 
       <div className={styles.palette} role="toolbar" aria-label="Map tools">
-        {TOOLS.map(t => (
+        {tools.map(t => (
           <button
             key={t.tool}
             className={`${styles.toolBtn} ${tool === t.tool ? styles.toolActive : ''}`}
-            onClick={() => setTool(t.tool)}
+            onClick={() => setSelectedTool(t.tool)}
             aria-pressed={tool === t.tool}
             title={t.name}
           >
@@ -232,11 +255,45 @@ export function TrackerMap({ state, onChange }: Props) {
                 : 'Tap a space to place this feature (tap again to remove).'}
       </p>
 
+      {twoLevels && (
+        <div className={styles.ladderBar}>
+          <button
+            className={styles.climbBtn}
+            disabled={climbFrom === -1}
+            onClick={() => onChange(climbLadder(state, climbFrom))}
+          >
+            🪜 Climb Ladder
+          </button>
+          <span className={styles.hint}>
+            {climbFrom === -1
+              ? 'Move your Tracker onto a Ladder to climb to the other map.'
+              : 'Moves your Tracker to the same space on the other map.'}
+          </span>
+        </div>
+      )}
+
       <div className={styles.sheets}>
         {state.sheets.map((sheet, i) => (
           <div key={i} className={styles.sheetSection}>
-            {state.levels === 2 && <span className={styles.levelLabel}>{LEVEL_LABELS[i]}</span>}
-            <TrackerSheetView sheet={sheet} tool={tool} onChange={s => updateSheet(i, s)} />
+            {twoLevels && (
+              <div className={styles.levelHeader}>
+                <span className={styles.levelLabel}>
+                  {sheet.level ? LEVEL_TITLES[sheet.level] : `Map ${i + 1} · level unknown`}
+                </span>
+                <div className={`${styles.toggle} ${styles.levelToggle}`} role="group" aria-label={`Level of map ${i + 1}`}>
+                  {([null, 'upper', 'lower'] as (TrackerLevel | null)[]).map(level => (
+                    <button
+                      key={level ?? 'unknown'}
+                      className={`${styles.toggleBtn} ${sheet.level === level ? styles.active : ''}`}
+                      onClick={() => onChange(setSheetLevel(state, i, level))}
+                    >
+                      {level === null ? '?' : level === 'upper' ? 'Upper' : 'Lower'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <TrackerSheetView state={state} index={i} tool={tool} onChange={onChange} />
           </div>
         ))}
       </div>

@@ -233,14 +233,72 @@
 .mark_chest   { background: #fbbf24; color: #1a1a1a; }
 .mark_monster { background: #f87171; color: #fff; }
 .mark_trap    { background: #a78bfa; color: #fff; }
+.mark_ladderUp   { background: #f97316; color: #fff; font-size: 1.2rem; }
+.mark_ladderDown { background: #0d9488; color: #fff; font-size: 1.2rem; }
+
+/* The Tracker is a piece on the board: a clear token plus a highlighted space */
+.cellTracker {
+  box-shadow: inset 0 0 0 3px #2563eb;
+  background: #eff6ff;
+}
 
 .tracker {
   position: absolute;
-  top: 1px;
+  top: 2px;
   right: 2px;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1rem;
   line-height: 1;
+  background: #fff;
+  border: 2px solid #2563eb;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+}
+
+.ladderBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.climbBtn {
+  padding: 0.4rem 1rem;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.climbBtn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.climbBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.levelHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.levelToggle .toggleBtn {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.75rem;
 }
 
 /* Wall tool: invisible hit zones along each internal edge */
@@ -273,6 +331,7 @@
 @media print {
   .options,
   .palette,
+  .ladderBar,
   .hint {
     display: none;
   }

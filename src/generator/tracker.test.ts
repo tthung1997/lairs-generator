@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canClimbLadder,
+  climbLadder,
   clearMark,
   createTrackerState,
   hasWall,
   moveTracker,
+  moveTrackerTo,
   normalizeWall,
   parseTrackerState,
+  placeMark,
   resetTrackerSheet,
   serializeTrackerState,
+  setSheetLevel,
   toggleKnown,
   toggleMark,
   toggleWall,
@@ -98,7 +103,63 @@ describe('tracker map', () => {
       }],
     });
     expect(parseTrackerState(raw)?.sheets[0]).toEqual({
-      rows: 6, cols: 6, known: ['0,0'], walls: ['0,0,s'], marks: { '1,1': 'trap' }, tracker: null,
+      rows: 6, cols: 6, known: ['0,0'], walls: ['0,0,s'], marks: { '1,1': 'trap' }, tracker: null, level: null,
     });
+  });
+
+  it('infers levels from the first ladder placed (Up = Lower, Down = Upper)', () => {
+    const state = createTrackerState('base', 2);
+    const up = placeMark(state, 0, { row: 2, col: 2 }, 'ladderUp');
+    expect(up.sheets.map(s => s.level)).toEqual(['lower', 'upper']);
+
+    const down = placeMark(state, 1, { row: 2, col: 2 }, 'ladderDown');
+    expect(down.sheets.map(s => s.level)).toEqual(['lower', 'upper']);
+
+    // Already-labeled maps are left alone, and non-ladder marks never label.
+    const labeled = setSheetLevel(state, 0, 'upper');
+    expect(placeMark(labeled, 0, { row: 0, col: 0 }, 'ladderUp').sheets.map(s => s.level)).toEqual(['upper', 'lower']);
+    expect(placeMark(state, 0, { row: 0, col: 0 }, 'trap').sheets.map(s => s.level)).toEqual([null, null]);
+  });
+
+  it('keeps the two level labels opposite and lets the player clear them', () => {
+    const state = createTrackerState('base', 2);
+    const upper = setSheetLevel(state, 1, 'upper');
+    expect(upper.sheets.map(s => s.level)).toEqual(['lower', 'upper']);
+    expect(setSheetLevel(upper, 0, null).sheets.map(s => s.level)).toEqual([null, null]);
+    expect(setSheetLevel(createTrackerState('base', 1), 0, 'upper').sheets[0].level).toBeNull();
+  });
+
+  it('keeps the Tracker on a single map and climbs ladders to the same coordinate', () => {
+    let state = createTrackerState('base', 2);
+    state = placeMark(state, 0, { row: 4, col: 3 }, 'ladderDown');
+    state = moveTrackerTo(state, 0, { row: 1, col: 1 });
+    expect(canClimbLadder(state, 0)).toBe(false);
+    expect(climbLadder(state, 0)).toBe(state);
+
+    state = moveTrackerTo(state, 0, { row: 4, col: 3 });
+    expect(canClimbLadder(state, 0)).toBe(true);
+    state = climbLadder(state, 0);
+    expect(state.sheets.map(s => s.tracker)).toEqual([null, '4,3']);
+
+    state = moveTrackerTo(state, 0, { row: 0, col: 0 });
+    expect(state.sheets.map(s => s.tracker)).toEqual(['0,0', null]);
+  });
+
+  it('cannot climb in a one-level lair', () => {
+    let state = createTrackerState('base', 1);
+    state = moveTrackerTo(placeMark(state, 0, { row: 0, col: 0 }, 'ladderUp'), 0, { row: 0, col: 0 });
+    expect(canClimbLadder(state, 0)).toBe(false);
+  });
+
+  it('loads maps saved before levels existed and repairs inconsistent labels', () => {
+    const sheet = { rows: 6, cols: 6, known: [], walls: [], marks: {}, tracker: null };
+    const old = parseTrackerState(JSON.stringify({ gridSize: 'base', levels: 2, sheets: [sheet, sheet] }));
+    expect(old?.sheets.map(s => s.level)).toEqual([null, null]);
+
+    const bad = parseTrackerState(JSON.stringify({
+      gridSize: 'base', levels: 2,
+      sheets: [{ ...sheet, level: 'upper' }, { ...sheet, level: 'upper' }],
+    }));
+    expect(bad?.sheets.map(s => s.level)).toEqual(['upper', 'lower']);
   });
 });

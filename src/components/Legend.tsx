@@ -1,7 +1,8 @@
+import type { AppMode } from '../generator/types';
 import styles from './Legend.module.css';
 
 interface Props {
-  appMode: 'standard' | 'multiplayer';
+  appMode: Exclude<AppMode, 'tracker'>;
 }
 
 const BASE_ITEMS = [

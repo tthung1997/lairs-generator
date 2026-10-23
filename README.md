@@ -16,6 +16,7 @@ Setting up a lair in Lairs requires each player to place walls, monsters, traps,
 - 🧱 **Adjustable wall count** — slider within the allowed range per variant
 - 🗺️ **Exploration mode** — fog of war for solo/co-op play with two-tap cell reveal and shareable exploration progress
 - 👥 **Multiplayer mode** — generates two-level lairs (Upper + Lower) from the Deeper Dungeons expansion for 2–3 explorers, with ladders connecting levels, multiple start tiles, and cross-level peril rule validation
+- 📍 **Tracker Map** — a digital map sheet for Explorers (replaces paper/dry-erase): mark Known spaces, draw walls, place Start/Exit/Chest/Monster/Trap symbols, and move your Tracker; supports 6×6 / 8×6 and 1–2 levels (with Up/Down Ladders, a Climb action, and Upper/Lower labels that start unknown, as in the rules), and saves automatically in your browser
 - 🔗 **Shareable URLs** — every lair is encoded in the URL, share it with your opponent
 - 🖨️ **Print-friendly** — clean black & white output for physical reference during setup
 

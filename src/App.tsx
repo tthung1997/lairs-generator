@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import type { ExplorerCount, GridSize, Lair, MultiplayerLair } from './generator/types';
+import type { AppMode, ExplorerCount, GridSize, Lair, MultiplayerLair } from './generator/types';
 import {
   buildConfig,
   buildMultiplayerConfig,
@@ -19,18 +19,37 @@ import {
   isMultiplayerHash,
 } from './generator/serializer';
 import { getExplorableCells, getStartCellKey } from './generator/exploration';
+import { createTrackerState, parseTrackerState, serializeTrackerState } from './generator/tracker';
+import type { TrackerState } from './generator/tracker';
 import { Header } from './components/Header';
 import { Controls } from './components/Controls';
 import { LairGrid } from './components/LairGrid';
 import { MultiplayerView } from './components/MultiplayerView';
+import { TrackerMap } from './components/TrackerMap';
 import { StatusBar } from './components/StatusBar';
 import { Legend } from './components/Legend';
 import { Footer } from './components/Footer';
 import styles from './App.module.css';
 
+const TRACKER_HASH = 'tracker';
+const TRACKER_STORAGE_KEY = 'lairs-tracker-map';
+
+function loadTrackerState(): TrackerState {
+  try {
+    return parseTrackerState(localStorage.getItem(TRACKER_STORAGE_KEY)) ?? createTrackerState('base', 1);
+  } catch {
+    return createTrackerState('base', 1);
+  }
+}
+
 export default function App() {
   // App mode
-  const [appMode, setAppMode] = useState<'standard' | 'multiplayer'>('standard');
+  const [appMode, setAppMode] = useState<AppMode>(() =>
+    window.location.hash === `#${TRACKER_HASH}` ? 'tracker' : 'standard'
+  );
+
+  // Tracker map state (persisted locally so a map survives page reloads)
+  const [trackerState, setTrackerState] = useState<TrackerState>(loadTrackerState);
 
   // Standard mode state
   const [gridSize, setGridSize] = useState<GridSize>('base');
@@ -130,7 +149,9 @@ export default function App() {
   // ── URL sync ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (appMode === 'multiplayer' && multiplayerLair) {
+    if (appMode === 'tracker') {
+      window.location.hash = TRACKER_HASH;
+    } else if (appMode === 'multiplayer' && multiplayerLair) {
       window.location.hash = encodeMultiplayerLair(
         multiplayerLair,
         explorationMode ? { explorationMode, upperRevealedCells, lowerRevealedCells } : undefined
@@ -143,10 +164,21 @@ export default function App() {
     }
   }, [appMode, lair, multiplayerLair, explorationMode, revealedCells, upperRevealedCells, lowerRevealedCells]);
 
+  // ── Persist tracker map ───────────────────────────────────────────────────
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TRACKER_STORAGE_KEY, serializeTrackerState(trackerState));
+    } catch {
+      // Storage unavailable (e.g. private mode); the map simply won't persist.
+    }
+  }, [trackerState]);
+
   // ── On mount: decode URL hash or generate fresh ───────────────────────────
 
   useEffect(() => {
     const hash = window.location.hash;
+    if (hash === `#${TRACKER_HASH}`) return;
     if (hash && hash.length > 1) {
       if (isMultiplayerHash(hash)) {
         const decoded = decodeMultiplayerLair(hash);
@@ -199,13 +231,14 @@ export default function App() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleAppModeChange = (mode: 'standard' | 'multiplayer') => {
+  const handleAppModeChange = (mode: AppMode) => {
     setAppMode(mode);
     setExplorationMode(false);
     setRevealedCells(new Set());
     setUpperRevealedCells(new Set());
     setLowerRevealedCells(new Set());
     setSelectedCell(null);
+    if (mode === 'tracker') return;
     if (mode === 'multiplayer') {
       generateMpLair(explorerCount, mpWallCount);
     } else {
@@ -376,7 +409,9 @@ export default function App() {
             ? (multiplayerLair ? multiplayerLair.config.rows * multiplayerLair.config.cols * 2 : 0)
             : totalCells}
         />
-        {appMode === 'multiplayer' ? (
+        {appMode === 'tracker' ? (
+          <TrackerMap state={trackerState} onChange={setTrackerState} />
+        ) : appMode === 'multiplayer' ? (
           multiplayerLair && (
             <MultiplayerView
               multiplayerLair={multiplayerLair}
@@ -401,7 +436,7 @@ export default function App() {
             />
           )
         )}
-        <Legend appMode={appMode} />
+        {appMode !== 'tracker' && <Legend appMode={appMode} />}
       </main>
       <Footer />
     </div>

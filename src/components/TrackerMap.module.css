@@ -1,0 +1,279 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.groupLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.toggle {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+}
+
+.toggleBtn {
+  padding: 0.4rem 1rem;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  transition: background 0.15s, color 0.15s;
+}
+
+.toggleBtn:hover:not(.active) {
+  background: #f3f4f6;
+}
+
+.toggleBtn.active {
+  background: #111827;
+  color: #fff;
+}
+
+.resetBtn {
+  padding: 0.4rem 1rem;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.resetBtn:hover {
+  background: #f3f4f6;
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.toolBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 3.6rem;
+  padding: 0.35rem 0.5rem;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #374151;
+}
+
+.toolBtn:hover:not(.toolActive) {
+  background: #f3f4f6;
+}
+
+.toolActive {
+  background: #111827;
+  border-color: #111827;
+  color: #fff;
+}
+
+.toolIcon {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.toolName {
+  font-size: 0.7rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.sheets {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.sheetSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.levelLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.75rem;
+  background: #f3f4f6;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.columnLabels {
+  display: flex;
+  margin-left: 2rem;
+}
+
+.columnLabel {
+  width: var(--cell-size, 64px);
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  padding-bottom: 4px;
+}
+
+.gridRow {
+  display: flex;
+  align-items: center;
+}
+
+.rowLabel {
+  width: 2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.cell {
+  width: var(--cell-size, 64px);
+  height: var(--cell-size, 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: #fffdf7;
+  border: 1px solid #d1d5db;
+  cursor: pointer;
+}
+
+.edgeNorth { border-top: 4px solid #111827; }
+.edgeSouth { border-bottom: 4px solid #111827; }
+.edgeWest  { border-left: 4px solid #111827; }
+.edgeEast  { border-right: 4px solid #111827; }
+
+.wallNorth { border-top: 4px solid #374151; }
+.wallSouth { border-bottom: 4px solid #374151; }
+.wallWest  { border-left: 4px solid #374151; }
+.wallEast  { border-right: 4px solid #374151; }
+
+.knownCircle {
+  position: absolute;
+  width: 70%;
+  height: 70%;
+  border: 2px solid #6b7280;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.mark {
+  position: relative;
+  width: 56%;
+  height: 56%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.mark_start   { background: #4ade80; color: #fff; }
+.mark_exit    { background: #22d3ee; color: #fff; }
+.mark_chest   { background: #fbbf24; color: #1a1a1a; }
+.mark_monster { background: #f87171; color: #fff; }
+.mark_trap    { background: #a78bfa; color: #fff; }
+
+.tracker {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 1rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Wall tool: invisible hit zones along each internal edge */
+.edgeBtn {
+  position: absolute;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.edgeBtn:hover,
+.edgeBtn:focus-visible {
+  background: rgba(96, 165, 250, 0.6);
+}
+
+.edgeBtn_north { top: -4px; left: 6px; right: 6px; height: 10px; }
+.edgeBtn_south { bottom: -4px; left: 6px; right: 6px; height: 10px; }
+.edgeBtn_west  { left: -4px; top: 6px; bottom: 6px; width: 10px; }
+.edgeBtn_east  { right: -4px; top: 6px; bottom: 6px; width: 10px; }
+
+@media (max-width: 600px) {
+  .sheets {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+@media print {
+  .options,
+  .palette,
+  .hint {
+    display: none;
+  }
+}

@@ -75,3 +75,6 @@ export interface MultiplayerLair {
   lower: LairLevel;      // lower level board
   ladders: LadderPair[]; // the connecting ladder pairs
 }
+
+// Top-level app view
+export type AppMode = 'standard' | 'multiplayer' | 'tracker';

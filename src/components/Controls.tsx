@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import type { ExplorerCount, GridSize } from '../generator/types';
+import type { AppMode, ExplorerCount, GridSize } from '../generator/types';
 import { WALL_RANGES, MULTIPLAYER_WALL_RANGES } from '../generator/config';
 import styles from './Controls.module.css';
 
 interface Props {
-  appMode: 'standard' | 'multiplayer';
+  appMode: AppMode;
   explorerCount: ExplorerCount;
-  onAppModeChange: (mode: 'standard' | 'multiplayer') => void;
+  onAppModeChange: (mode: AppMode) => void;
   onExplorerCountChange: (count: ExplorerCount) => void;
   gridSize: GridSize;
   wallCount: number;
@@ -39,6 +39,7 @@ export function Controls({
   const range = appMode === 'multiplayer'
     ? MULTIPLAYER_WALL_RANGES[explorerCount]
     : WALL_RANGES[gridSize];
+  const isTracker = appMode === 'tracker';
 
   const [showDropdown, setShowDropdown] = useState(false);
   const [copiedType, setCopiedType] = useState<'full' | 'explore' | null>(null);
@@ -84,9 +85,16 @@ export function Controls({
           >
             👥 Multiplayer
           </button>
+          <button
+            className={`${styles.toggleBtn} ${isTracker ? styles.active : ''}`}
+            onClick={() => onAppModeChange('tracker')}
+          >
+            📍 Tracker Map
+          </button>
         </div>
       </div>
 
+      {isTracker ? null : (<>
       {/* Grid size (standard) OR Explorer count (multiplayer) */}
       {appMode === 'standard' ? (
         <div className={styles.group}>
@@ -206,6 +214,7 @@ export function Controls({
           </div>
         )}
       </div>
+      </>)}
     </div>
   );
 }
